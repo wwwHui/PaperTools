@@ -17,9 +17,10 @@ namespace PaperTools
 {
     public partial class RibbonPaperTools
     {
-        private void Ribbon1_Load(object sender, RibbonUIEventArgs e)
+        private void RibbonPaperTools_Load(object sender, RibbonUIEventArgs e)
         {
-
+            zoteroCitationColor.Tag = DateTime.MinValue;
+            wordCitationColor.Tag = DateTime.MinValue;
             UpdatePandocVersion();
         }
 
@@ -83,37 +84,54 @@ namespace PaperTools
             return "none";
         }
 
-        private void citationColor_Click(object sender, RibbonControlEventArgs e)
+        private void zoteroCitationColor_Click(object sender, RibbonControlEventArgs e)
         {
-            Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
-            Range currentRange = doc.Content;
-
-            List<Bookmark> zoteroBookmarks = new List<Bookmark>();
+            
+            TimeSpan timeDifference = DateTime.Now - (DateTime)zoteroCitationColor.Tag;
+            WdColor newColor = WdColor.wdColorBlue; // 蓝色
+            if (timeDifference.TotalMilliseconds < 300)
+            {
+                newColor = WdColor.wdColorAutomatic;  
+            }
 
             // 寻找包含“ZOTERO”的书签
+            Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
             foreach (Bookmark bookmark in doc.Bookmarks)
             {
                 if (bookmark.Name.Contains("ZOTERO"))
-                {
-                    zoteroBookmarks.Add(bookmark);
-                }
-            }
-            if (zoteroBookmarks.Count > 0)
-            {
-                WdColor newColor = WdColor.wdColorAutomatic;
-                if (zoteroBookmarks[0].Range.Font.Color == newColor)
-                {
-                    newColor = WdColor.wdColorBlue;  // 蓝色
-                }
-
-                foreach (Bookmark bookmark in zoteroBookmarks)
                 {
                     bookmark.Range.Font.Color = newColor;  // 设置颜色
                 }
             }
             // doc.Save();  // 保存文档
 
+            zoteroCitationColor.Tag = DateTime.Now;
 
+        }
+
+
+        private void wordCitationColor_Click(object sender, RibbonControlEventArgs e)
+        {
+
+            TimeSpan timeDifference = DateTime.Now - (DateTime)wordCitationColor.Tag;
+            WdColor newColor = WdColor.wdColorGreen; // 色
+            if (timeDifference.TotalMilliseconds < 300)
+            {
+                newColor = WdColor.wdColorAutomatic;
+            }
+
+            // 获取当前文档
+            Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
+            // 遍历文档中的每个交叉引用
+            foreach (Word.Field field in doc.Fields)
+            {
+                if (field.Type == Word.WdFieldType.wdFieldRef)
+                {
+                    field.Result.Font.Color = newColor;  // 设置颜色;
+                }
+            }
+
+            wordCitationColor.Tag = DateTime.Now;
         }
 
         private void buttonExportLatex_Click(object sender, RibbonControlEventArgs e)
@@ -129,13 +147,13 @@ namespace PaperTools
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 string texFilePath = saveFileDialog.FileName;
-                exportLatexFile(texFilePath);
+                ExportLatexFile(texFilePath);
                 ExtractImages(Path.GetDirectoryName(texFilePath));
             }
 
         }
 
-        private void exportLatexFile(string outputFilePath)
+        private void ExportLatexFile(string outputFilePath)
         {
             // 获取当前活动的 Word 应用程序和文档
             Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
@@ -185,33 +203,85 @@ namespace PaperTools
             try
             {
                 int imageIndex = 0;
-                foreach (Microsoft.Office.Interop.Word.InlineShape ils in doc.InlineShapes)
+                foreach (InlineShape ils in doc.InlineShapes)
                 {
-                    if (ils != null)
+                    if (ils == null)  continue;
+                    
+                    // ils.Type == WdInlineShapeType.wdInlineShapePicture 判断类型
+                    ils.Select();
+                    Globals.ThisAddIn.Application.Selection.CopyAsPicture();
+                    IDataObject ido = Clipboard.GetDataObject();
+                    if (ido != null)
                     {
-                        if (ils.Type == Microsoft.Office.Interop.Word.WdInlineShapeType.wdInlineShapePicture)
+                        if (ido.GetDataPresent(DataFormats.Bitmap))
                         {
-                            ils.Select();
-                            Globals.ThisAddIn.Application.Selection.CopyAsPicture();
-                            IDataObject ido = Clipboard.GetDataObject();
-                            if (ido != null)
-                            {
-                                if (ido.GetDataPresent(DataFormats.Bitmap))
-                                {
-                                    Bitmap bmp = (Bitmap)ido.GetData(DataFormats.Bitmap);
-                                    string imagePath = Path.Combine(mediaFolderPath, $"Image{++imageIndex}.png");
-                                    bmp.Save(imagePath, ImageFormat.Png);
-                                }
-                            }
+                            Bitmap bmp = (Bitmap)ido.GetData(DataFormats.Bitmap);
+                            string imagePath = Path.Combine(mediaFolderPath, $"Image{++imageIndex}.png");
+                            bmp.Save(imagePath, ImageFormat.Png);
                         }
                     }
                 }
+                Clipboard.Clear();
                 Console.WriteLine("Images extracted successfully.");
             }
             catch (Exception ex)
             {
                 // 处理异常
                 Console.WriteLine("Exception: " + ex.Message);
+            }
+        }
+
+        private void buttonReomve_Click(object sender, RibbonControlEventArgs e)
+        {
+            Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
+            Word.Selection selection = Globals.ThisAddIn.Application.Selection;
+
+            if (selection != null && !selection.Text.Equals(string.Empty))
+            {
+                string selectedText = selection.Text;
+                selectedText = selectedText.Replace(" ", ""); // 去除空格
+                selectedText = selectedText.Replace("\r", ""); // 去除回车符
+                selectedText = selectedText.Replace("\n", ""); // 去除换行符
+
+                selection.Text = selectedText; // 将处理后的文本赋回选中内容
+            }
+            
+
+        }
+
+        private void buttonENReplace_Click(object sender, RibbonControlEventArgs e)
+        {
+            Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
+            Word.Selection selection = Globals.ThisAddIn.Application.Selection;
+
+            if (selection != null && !selection.Text.Equals(string.Empty))
+            {
+                string selectedText = selection.Text;
+                selectedText = selectedText.Replace("，", ","); // 替换中文逗号为英文逗号
+                selectedText = selectedText.Replace("。", "."); // 替换中文句号为英文句号
+                selectedText = selectedText.Replace("；", ";"); // 替换中文分号为英文分号
+                selectedText = selectedText.Replace("：", ":"); // 替换中文冒号为英文冒号
+                                                               // 可以继续添加其他标点符号的替换规则...
+
+                selection.Text = selectedText; // 将处理后的文本赋回选中内容
+            }
+        }
+
+        private void buttonCNReplace_Click(object sender, RibbonControlEventArgs e)
+        {
+            Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
+            Word.Selection selection = Globals.ThisAddIn.Application.Selection;
+
+            if (selection != null && !selection.Text.Equals(string.Empty))
+            {
+                string selectedText = selection.Text;
+                selectedText = selectedText.Replace(",", "，"); // 替换英文逗号为中文逗号
+                selectedText = selectedText.Replace(".", "。"); // 替换英文句号为中文句号
+                selectedText = selectedText.Replace(";", "；"); // 替换英文分号为中文分号
+                selectedText = selectedText.Replace(":", "："); // 替换英文冒号为中文冒号
+                                                               // 可以继续添加其他标点符号的替换规则...
+
+                selection.Text = selectedText; // 将处理后的文本赋回选中内容
             }
         }
 
