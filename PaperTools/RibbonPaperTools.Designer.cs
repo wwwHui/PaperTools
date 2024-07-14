@@ -38,24 +38,29 @@
             this.groupPandoc = this.Factory.CreateRibbonGroup();
             this.buttonPandocVersion = this.Factory.CreateRibbonButton();
             this.buttonExportLatex = this.Factory.CreateRibbonButton();
-            this.groupColor = this.Factory.CreateRibbonGroup();
-            this.zoteroCitationColor = this.Factory.CreateRibbonButton();
-            this.wordCitationColor = this.Factory.CreateRibbonButton();
+            this.groupZotero = this.Factory.CreateRibbonGroup();
+            this.zoteroColorButton = this.Factory.CreateRibbonButton();
+            this.zoteroCitationButton = this.Factory.CreateRibbonButton();
             this.groupDoc = this.Factory.CreateRibbonGroup();
             this.buttonReomve = this.Factory.CreateRibbonButton();
             this.buttonCNReplace = this.Factory.CreateRibbonButton();
             this.buttonENReplace = this.Factory.CreateRibbonButton();
+            this.groupOther = this.Factory.CreateRibbonGroup();
+            this.wordCitationColor = this.Factory.CreateRibbonButton();
+            this.zoteroInfoButton = this.Factory.CreateRibbonButton();
             this.PaperTools.SuspendLayout();
             this.groupPandoc.SuspendLayout();
-            this.groupColor.SuspendLayout();
+            this.groupZotero.SuspendLayout();
             this.groupDoc.SuspendLayout();
+            this.groupOther.SuspendLayout();
             this.SuspendLayout();
             // 
             // PaperTools
             // 
             this.PaperTools.Groups.Add(this.groupPandoc);
-            this.PaperTools.Groups.Add(this.groupColor);
+            this.PaperTools.Groups.Add(this.groupZotero);
             this.PaperTools.Groups.Add(this.groupDoc);
+            this.PaperTools.Groups.Add(this.groupOther);
             this.PaperTools.Label = "PaperTools";
             this.PaperTools.Name = "PaperTools";
             // 
@@ -77,24 +82,25 @@
             this.buttonExportLatex.Name = "buttonExportLatex";
             this.buttonExportLatex.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonExportLatex_Click);
             // 
-            // groupColor
+            // groupZotero
             // 
-            this.groupColor.Items.Add(this.zoteroCitationColor);
-            this.groupColor.Items.Add(this.wordCitationColor);
-            this.groupColor.Label = "颜色";
-            this.groupColor.Name = "groupColor";
+            this.groupZotero.Items.Add(this.zoteroInfoButton);
+            this.groupZotero.Items.Add(this.zoteroColorButton);
+            this.groupZotero.Items.Add(this.zoteroCitationButton);
+            this.groupZotero.Label = "Zotero";
+            this.groupZotero.Name = "groupZotero";
             // 
-            // zoteroCitationColor
+            // zoteroColorButton
             // 
-            this.zoteroCitationColor.Label = "Zotero引用";
-            this.zoteroCitationColor.Name = "zoteroCitationColor";
-            this.zoteroCitationColor.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.zoteroCitationColor_Click);
+            this.zoteroColorButton.Label = "颜色";
+            this.zoteroColorButton.Name = "zoteroColorButton";
+            this.zoteroColorButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.zoteroColorButton_Click);
             // 
-            // wordCitationColor
+            // zoteroCitationButton
             // 
-            this.wordCitationColor.Label = "交叉引用";
-            this.wordCitationColor.Name = "wordCitationColor";
-            this.wordCitationColor.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.wordCitationColor_Click);
+            this.zoteroCitationButton.Label = "引用[未完成]";
+            this.zoteroCitationButton.Name = "zoteroCitationButton";
+            this.zoteroCitationButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.zoteroCitationButton_Click);
             // 
             // groupDoc
             // 
@@ -122,6 +128,24 @@
             this.buttonENReplace.Name = "buttonENReplace";
             this.buttonENReplace.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonENReplace_Click);
             // 
+            // groupOther
+            // 
+            this.groupOther.Items.Add(this.wordCitationColor);
+            this.groupOther.Label = "其他";
+            this.groupOther.Name = "groupOther";
+            // 
+            // wordCitationColor
+            // 
+            this.wordCitationColor.Label = "交叉引用颜色";
+            this.wordCitationColor.Name = "wordCitationColor";
+            this.wordCitationColor.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.wordCitationColor_Click);
+            // 
+            // zoteroInfoButton
+            // 
+            this.zoteroInfoButton.Label = "Zotero";
+            this.zoteroInfoButton.Name = "zoteroInfoButton";
+            this.zoteroInfoButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.zoteroInfoButton_Click);
+            // 
             // RibbonPaperTools
             // 
             this.Name = "RibbonPaperTools";
@@ -132,10 +156,12 @@
             this.PaperTools.PerformLayout();
             this.groupPandoc.ResumeLayout(false);
             this.groupPandoc.PerformLayout();
-            this.groupColor.ResumeLayout(false);
-            this.groupColor.PerformLayout();
+            this.groupZotero.ResumeLayout(false);
+            this.groupZotero.PerformLayout();
             this.groupDoc.ResumeLayout(false);
             this.groupDoc.PerformLayout();
+            this.groupOther.ResumeLayout(false);
+            this.groupOther.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -144,15 +170,18 @@
 
         internal Microsoft.Office.Tools.Ribbon.RibbonTab PaperTools;
         internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupPandoc;
-        internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupColor;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton zoteroCitationColor;
+        internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupZotero;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton zoteroColorButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonPandocVersion;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonExportLatex;
         internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupDoc;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonReomve;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonCNReplace;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonENReplace;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton zoteroCitationButton;
+        internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupOther;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton wordCitationColor;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton zoteroInfoButton;
     }
 
     partial class ThisRibbonCollection

@@ -1,7 +1,8 @@
 ﻿
-using Microsoft.Office.Interop.Word;
+//using Microsoft.Office.Interop.Word;
 using Microsoft.Office.Tools.Ribbon;
 using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -19,9 +20,10 @@ namespace PaperTools
     {
         private void RibbonPaperTools_Load(object sender, RibbonUIEventArgs e)
         {
-            zoteroCitationColor.Tag = DateTime.MinValue;
-            wordCitationColor.Tag = DateTime.MinValue;
+            zoteroColorButton.Tag = DateTime.MinValue;
+            zoteroCitationButton.Tag = DateTime.MinValue;
             UpdatePandocVersion();
+            UpdateZoteroInfo();
         }
 
         private void UpdatePandocVersion()
@@ -37,6 +39,41 @@ namespace PaperTools
                 buttonPandocVersion.Label = "Pandoc " + pandocVersion;
                 buttonExportLatex.Enabled = true;
             }
+        }
+
+        private async void UpdateZoteroInfo()
+        {
+            Word.Application wordApp = Globals.ThisAddIn.Application;
+            if (wordApp.Documents.Count > 0)
+            {
+
+                Word.Document doc = wordApp.ActiveDocument;
+
+                // 初始化计数器
+                int zoteroItemCount = 0;
+
+                // 遍历文档中的所有书签，统计包含 "ZOTERO_BIBL" 的书签数量
+                foreach (Word.Bookmark bookmark in doc.Bookmarks)
+                {
+                    if (bookmark.Name.Contains("ZOTERO"))  // ZOTERO_BIBL
+                    {
+                        zoteroItemCount++;
+                    }
+                }
+
+                // 遍历文档中的所有字段，统计包含 "ADDIN ZOTERO_ITEM" 的字段数量
+                foreach (Word.Field field in doc.Fields)
+                {
+                    if (field.Code.Text.Contains("ZOTERO"))
+                    {
+                        zoteroItemCount++;
+                    }
+                }
+                zoteroInfoButton.Label = $"Zotero[{zoteroItemCount}]";
+                string text = $"Zotero items count: {zoteroItemCount}";
+                await DisplayStatusBarTextAsync(text);  // 异步更新状态栏
+            }
+
         }
 
         private string GetPandocVersion()
@@ -84,54 +121,80 @@ namespace PaperTools
             return "none";
         }
 
-        private void zoteroCitationColor_Click(object sender, RibbonControlEventArgs e)
+
+        private async Task DisplayStatusBarTextAsync(string message)
+        {
+            await Task.Run(() =>
+            {
+                string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                string text = $"[PaperTools {currentTime}]: {message}";
+                // 更新 StatusBar 内容
+                Globals.ThisAddIn.Application.StatusBar = text;
+            });
+        }
+
+        private void zoteroInfoButton_Click(object sender, RibbonControlEventArgs e)
+        {
+            UpdateZoteroInfo();
+        }
+
+        private async void zoteroColorButton_Click(object sender, RibbonControlEventArgs e)
         {
             
-            TimeSpan timeDifference = DateTime.Now - (DateTime)zoteroCitationColor.Tag;
-            WdColor newColor = WdColor.wdColorBlue; // 蓝色
+            TimeSpan timeDifference = DateTime.Now - (DateTime)zoteroColorButton.Tag;
+            Word.WdColor newColor = Word.WdColor.wdColorBlue; // 蓝色
             if (timeDifference.TotalMilliseconds < 300)
             {
-                newColor = WdColor.wdColorAutomatic;  
+                newColor = Word.WdColor.wdColorAutomatic;  
             }
 
-            // 寻找包含“ZOTERO”的书签
+            // 寻找包含“ZOTERO”的书签  即 Zotero Bibliography
             Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
-            foreach (Bookmark bookmark in doc.Bookmarks)
+            int count = 0;
+            foreach (Word.Bookmark bookmark in doc.Bookmarks)
             {
                 if (bookmark.Name.Contains("ZOTERO"))
                 {
                     bookmark.Range.Font.Color = newColor;  // 设置颜色
+                    count += 1;
                 }
             }
-            // doc.Save();  // 保存文档
+            // 遍历文档中的所有字段，更新 包含 "ADDIN ZOTERO _ITEM" 的字段颜色
+            foreach (Word.Field field in doc.Fields)
+            {
+                if (field.Code.Text.Contains("ZOTERO"))
+                {
+                    field.Result.Font.Color = newColor;  // 设置颜色;
+                    count++;
+                }
+            }
 
-            zoteroCitationColor.Tag = DateTime.Now;
+
+            zoteroColorButton.Tag = DateTime.Now;
+            // doc.Save();  // 保存文档
+            // Console.WriteLine(format: "共{0}个书签，刷新其中{1}处与Zotero相关的颜色。", doc.Bookmarks.Count,count);
+            string text = $"Zotero Items: {count}";
+            //Globals.ThisAddIn.Application.StatusBar = text;
+            await DisplayStatusBarTextAsync(text);
 
         }
 
 
-        private void wordCitationColor_Click(object sender, RibbonControlEventArgs e)
+        private async void zoteroCitationButton_Click(object sender, RibbonControlEventArgs e)
         {
-
-            TimeSpan timeDifference = DateTime.Now - (DateTime)wordCitationColor.Tag;
-            WdColor newColor = WdColor.wdColorGreen; // 色
-            if (timeDifference.TotalMilliseconds < 300)
-            {
-                newColor = WdColor.wdColorAutomatic;
-            }
-
-            // 获取当前文档
             Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
-            // 遍历文档中的每个交叉引用
             foreach (Word.Field field in doc.Fields)
             {
-                if (field.Type == Word.WdFieldType.wdFieldRef)
+                // await DisplayStatusBarTextAsync($"Field Text: {field.Code.Text}");
+
+                if (field.Code.Text.Contains("ADDIN ZOTERO_ITEM"))
                 {
-                    field.Result.Font.Color = newColor;  // 设置颜色;
+                    // 输出 Zotero 引用字段的代码
+                    Console.WriteLine($"Found Zotero Citation Field: {field.Code.Text}");
                 }
             }
 
-            wordCitationColor.Tag = DateTime.Now;
+
         }
 
         private void buttonExportLatex_Click(object sender, RibbonControlEventArgs e)
@@ -203,7 +266,7 @@ namespace PaperTools
             try
             {
                 int imageIndex = 0;
-                foreach (InlineShape ils in doc.InlineShapes)
+                foreach (Word.InlineShape ils in doc.InlineShapes)
                 {
                     if (ils == null)  continue;
                     
@@ -283,6 +346,34 @@ namespace PaperTools
 
                 selection.Text = selectedText; // 将处理后的文本赋回选中内容
             }
+        }
+
+        private async void wordCitationColor_Click(object sender, RibbonControlEventArgs e)
+        {
+            TimeSpan timeDifference = DateTime.Now - (DateTime)zoteroCitationButton.Tag;
+            Word.WdColor newColor = Word.WdColor.wdColorGreen; // 色
+            if (timeDifference.TotalMilliseconds < 300)
+            {
+                newColor = Word.WdColor.wdColorAutomatic;
+            }
+
+            // 获取当前文档
+            Word.Document doc = Globals.ThisAddIn.Application.ActiveDocument;
+            // 遍历文档中的每个交叉引用
+            int count = 0;
+            foreach (Word.Field field in doc.Fields)
+            {
+                if (field.Type == Word.WdFieldType.wdFieldRef)
+                {
+                    field.Result.Font.Color = newColor;  // 设置颜色;
+                    ++count;
+                }
+            }
+
+            zoteroCitationButton.Tag = DateTime.Now;
+            string text = $"Fields: {count}/{doc.Fields.Count}";
+            // Globals.ThisAddIn.Application.StatusBar = text;
+            await DisplayStatusBarTextAsync(text);
         }
 
 
